@@ -175,7 +175,7 @@ class DFLJPG(object):
         if fanseg_mask is not None:
             fanseg_mask = np.clip ( (fanseg_mask*255).astype(np.uint8), 0, 255 )
 
-            ret, buf = cv2.imencode( '.jpg', fanseg_mask, [int(cv2.IMWRITE_JPEG_QUALITY), 85] )
+            ret, buf = cv2.imencode( '.jpg', fanseg_mask, [int(cv2.IMWRITE_JPEG_QUALITY), 95] )
 
             if ret and len(buf) < 60000:
                 fanseg_mask = buf
