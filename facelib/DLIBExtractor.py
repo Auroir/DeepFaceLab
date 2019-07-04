@@ -27,7 +27,7 @@ class DLIBExtractor(object):
 
         detected_faces = []
         input_scale = self.scale_to / (w if w > h else h)
-        input_image = cv2.resize (input_image, ( int(w*input_scale), int(h*input_scale) ), interpolation=cv2.INTER_LINEAR)
+        input_image = cv2.resize (input_image, ( int(w*input_scale), int(h*input_scale) ), interpolation=cv2.INTER_CUBIC)
         detected_faces = self.dlib_cnn_face_detector(input_image, 0)
 
         result = []

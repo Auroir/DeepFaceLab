@@ -95,7 +95,7 @@ class MTCExtractor(object):
         (h, w, ch) = input_image.shape
 
         input_scale = self.scale_to / max(w,h)
-        input_image = cv2.resize (input_image, ( int(w*input_scale), int(h*input_scale) ), interpolation=cv2.INTER_LINEAR)
+        input_image = cv2.resize (input_image, ( int(w*input_scale), int(h*input_scale) ), interpolation=cv2.INTER_CUBIC)
 
         detected_faces, pnts = detect_face ( input_image, self.min_face_size, self.pnet_fun, self.rnet_fun, self.onet_fun, [ self.thresh1, self.thresh2, self.thresh3 ], self.scale_factor )
         detected_faces = [ ( int(face[0]/input_scale), int(face[1]/input_scale), int(face[2]/input_scale), int(face[3]/input_scale)) for face in detected_faces ]
@@ -346,5 +346,5 @@ def rerec(bboxA):
     return bboxA
 
 def imresample(img, sz):
-    im_data = cv2.resize(img, (sz[1], sz[0]), interpolation=cv2.INTER_LINEAR) #@UndefinedVariable
+    im_data = cv2.resize(img, (sz[1], sz[0]), interpolation=cv2.INTER_CUBIC) #@UndefinedVariable
     return im_data

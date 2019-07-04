@@ -5,7 +5,7 @@ from scipy.spatial import Delaunay
 
 def applyAffineTransform(src, srcTri, dstTri, size) :
     warpMat = cv2.getAffineTransform( np.float32(srcTri), np.float32(dstTri) )
-    return cv2.warpAffine( src, warpMat, (size[0], size[1]), None, flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT_101 )
+    return cv2.warpAffine( src, warpMat, (size[0], size[1]), None, flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT_101 )
 
 def morphTriangle(dst_img, src_img, st, dt) :
     (h,w,c) = dst_img.shape

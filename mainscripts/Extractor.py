@@ -1,4 +1,4 @@
-import traceback
+﻿import traceback
 import os
 import sys
 import time
@@ -134,7 +134,7 @@ class ExtractSubprocessor(Subprocessor):
                 #extracting from already extracted jpg image?
                 if filename_path.suffix == '.png':
                     src_dflimg = DFLPNG.load ( str(filename_path) )
-                if filename_path.suffix == '.png':
+                if filename_path.suffix == '.jpg':
                     src_dflimg = DFLJPG.load ( str(filename_path) )
 
             if 'rects' in self.type:
@@ -201,7 +201,7 @@ class ExtractSubprocessor(Subprocessor):
                 landmarks = data.landmarks
 
                 if self.debug_dir is not None:
-                    debug_output_file = str( Path(self.debug_dir) / (filename_path.stem+'.png') )
+                    debug_output_file = str( Path(self.debug_dir) / (filename_path.stem+'.jpg') )
                     debug_image = image.copy()
 
                 if src_dflimg is not None and len(rects) != 1:
@@ -242,16 +242,16 @@ class ExtractSubprocessor(Subprocessor):
                         if self.debug_dir is not None:
                             LandmarksProcessor.draw_rect_landmarks (debug_image, rect, image_landmarks, self.image_size, self.face_type, transparent_mask=True)
 
-                        if src_dflimg is not None and filename_path.suffix == '.png':
+                        if src_dflimg is not None and filename_path.suffix == '.jpg':
                             #if extracting from dflimg and jpg copy it in order not to lose quality
                             output_file = str(self.final_output_path / filename_path.name)
                             if str(filename_path) != str(output_file):
                                 shutil.copy ( str(filename_path), str(output_file) )
                         else:
-                            output_file = '{}_{}{}'.format(str(self.final_output_path / filename_path.stem), str(face_idx), '.png')
-                            cv2_imwrite(output_file, face_image, [int(cv2.IMWRITE_PNG_COMPRESSION), 7] )
+                            output_file = '{}_{}{}'.format(str(self.final_output_path / filename_path.stem), str(face_idx), '.jpg')
+                            cv2_imwrite(output_file, face_image, [int(cv2.IMWRITE_JPEG_QUALITY), 85] )
 
-                        DFLPNG.embed_data(output_file, face_type=FaceType.toString(self.face_type),
+                        DFLJPG.embed_data(output_file, face_type=FaceType.toString(self.face_type),
                                                        landmarks=face_image_landmarks.tolist(),
                                                        source_filename=filename_path.name,
                                                        source_rect=rect,
@@ -265,7 +265,7 @@ class ExtractSubprocessor(Subprocessor):
                     data.faces_detected = face_idx
 
                 if self.debug_dir is not None:
-                    cv2_imwrite(debug_output_file, debug_image, [int(cv2.IMWRITE_PNG_COMPRESSION), 7] )
+                    cv2_imwrite(debug_output_file, debug_image, [int(cv2.IMWRITE_JPEG_QUALITY), 50] )
 
                 return data
                 
@@ -391,7 +391,7 @@ class ExtractSubprocessor(Subprocessor):
                     if self.cache_image[0] == (h,w,c) + (self.view_scale,filename):
                         self.image = self.cache_image[1]
                     else:
-                        self.image = cv2.resize (self.original_image, ( int(w*self.view_scale), int(h*self.view_scale) ), interpolation=cv2.INTER_LANCZOS4)
+                        self.image = cv2.resize (self.original_image, ( int(w*self.view_scale), int(h*self.view_scale) ), interpolation=cv2.INTER_CUBIC)
                         self.cache_image = ( (h,w,c) + (self.view_scale,filename), self.image )
 
                     (h,w,c) = self.image.shape
@@ -694,7 +694,7 @@ def extract_fanseg(input_dir, device_args={} ):
         filepath = Path(filename)
         if filepath.suffix == '.png':
             dflimg = DFLPNG.load( str(filepath) )
-        elif filepath.suffix == '.png':
+        elif filepath.suffix == '.jpg':
             dflimg = DFLJPG.load ( str(filepath) )
         else:
             dflimg = None

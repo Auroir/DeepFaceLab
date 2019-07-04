@@ -101,7 +101,7 @@ class LandmarksExtractor(object):
         oldY = np.array([max(1, ul[1] + 1), min(br[1], ht)], dtype=np.int32)
         newImg[newY[0] - 1:newY[1], newX[0] - 1:newX[1] ] = image[oldY[0] - 1:oldY[1], oldX[0] - 1:oldX[1], :]
 
-        newImg = cv2.resize(newImg, dsize=(int(resolution), int(resolution)), interpolation=cv2.INTER_LINEAR)
+        newImg = cv2.resize(newImg, dsize=(int(resolution), int(resolution)), interpolation=cv2.INTER_CUBIC)
         return newImg
 
     def get_pts_from_predict(self, a, center, scale):
