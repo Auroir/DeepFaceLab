@@ -32,7 +32,7 @@ class S3FDExtractor(object):
         scale_to = max(64, scale_to)
 
         input_scale = d / scale_to
-        input_image = cv2.resize (input_image, ( int(w/input_scale), int(h/input_scale) ), interpolation=cv2.INTER_CUBIC)
+        input_image = cv2.resize (input_image, ( int(w/input_scale), int(h/input_scale) ), interpolation=cv2.INTER_AREA)
 
         olist = self.model.predict( np.expand_dims(input_image,0) )
 
