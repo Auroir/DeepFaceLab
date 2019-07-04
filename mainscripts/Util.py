@@ -49,7 +49,7 @@ def convert_png_to_jpg_file (filepath):
 
     img = cv2_imread (str(filepath))
     new_filepath = str(filepath.parent / (filepath.stem + '.jpg'))
-    cv2_imwrite ( new_filepath, img, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
+    cv2_imwrite ( new_filepath, img, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
 
     DFLJPG.embed_data( new_filepath,
                        face_type=dfl_dict.get('face_type', None),
@@ -94,7 +94,7 @@ def add_landmarks_debug_images(input_path):
             LandmarksProcessor.draw_landmarks(img, face_landmarks, transparent_mask=True, ie_polys=dflimg.get_ie_polys() )
 
             output_file = '{}{}'.format( str(Path(str(input_path)) / filepath.stem),  '_debug.jpg')
-            cv2_imwrite(output_file, img, [int(cv2.IMWRITE_JPEG_QUALITY), 50] )
+            cv2_imwrite(output_file, img, [int(cv2.IMWRITE_JPEG_QUALITY), 85] )
 
 def recover_original_aligned_filename(input_path):
     io.log_info ("Recovering original aligned filename...")
