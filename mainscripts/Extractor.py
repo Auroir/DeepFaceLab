@@ -142,7 +142,8 @@ class ExtractSubprocessor(Subprocessor):
                     self.log_err ( 'Image is too small %s : [%d, %d]' % ( str(filename_path), w, h ) )
                     data.rects = []
                 else:
-                    for rot in ([0, 90, 270, 180]):
+#                    for rot in ([0, 90, 270, 180]):
+                    for rot in ([0]):                        
                         data.rects_rotation = rot
                         if rot == 0:
                             rotated_image = image
@@ -242,7 +243,7 @@ class ExtractSubprocessor(Subprocessor):
                         if self.debug_dir is not None:
                             LandmarksProcessor.draw_rect_landmarks (debug_image, rect, image_landmarks, self.image_size, self.face_type, transparent_mask=True)
 
-                        if src_dflimg is not None and filename_path.suffix == '.png':
+                        if src_dflimg is not None and filename_path.suffix == '.jpg':
                             #if extracting from dflimg and jpg copy it in order not to lose quality
                             output_file = str(self.final_output_path / filename_path.name)
                             if str(filename_path) != str(output_file):
