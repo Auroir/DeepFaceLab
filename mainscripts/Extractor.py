@@ -142,8 +142,7 @@ class ExtractSubprocessor(Subprocessor):
                     self.log_err ( 'Image is too small %s : [%d, %d]' % ( str(filename_path), w, h ) )
                     data.rects = []
                 else:
-#                    for rot in ([0, 90, 270, 180]):
-                    for rot in ([0]):                        
+                    for rot in ([0, 90, 270, 180]):
                         data.rects_rotation = rot
                         if rot == 0:
                             rotated_image = image
