@@ -134,7 +134,7 @@ class ExtractSubprocessor(Subprocessor):
                 #extracting from already extracted jpg image?
                 if filename_path.suffix == '.png':
                     src_dflimg = DFLPNG.load ( str(filename_path) )
-                if filename_path.suffix == '.png':
+                if filename_path.suffix == '.jpg':
                     src_dflimg = DFLJPG.load ( str(filename_path) )
 
             if 'rects' in self.type:
@@ -694,7 +694,7 @@ def extract_fanseg(input_dir, device_args={} ):
         filepath = Path(filename)
         if filepath.suffix == '.png':
             dflimg = DFLPNG.load( str(filepath) )
-        elif filepath.suffix == '.png':
+        elif filepath.suffix == '.jpg':
             dflimg = DFLJPG.load ( str(filepath) )
         else:
             dflimg = None
