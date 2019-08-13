@@ -1,3 +1,3 @@
-![](doc/DFL_welcome.jpg)
+﻿![](doc/DFL_welcome.jpg)
 
 Colab QoL Fixups

@@ -45,7 +45,7 @@ class ModelBase(object):
                 device_args['force_gpu_idx'] = io.input_int("Which GPU idx to choose? ( skip: best GPU ) : ", -1, [ x[0] for x in idxs_names_list] )
         self.device_args = device_args
 
-        self.device_config = nnlib.DeviceConfig(allow_growth=False, **self.device_args)
+        self.device_config = nnlib.DeviceConfig(allow_growth=True, **self.device_args)
 
         io.log_info ("Loading model...")
 
@@ -466,7 +466,7 @@ class ModelBase(object):
         return imagelib.equalize_and_stack_square (images)
 
     def generate_next_sample(self):
-        return [next(generator) for generator in self.generator_list]
+        return [ generator.generate_next() for generator in self.generator_list]
 
     def train_one_iter(self):
         sample = self.generate_next_sample()
