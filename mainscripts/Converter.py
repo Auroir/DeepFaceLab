@@ -64,11 +64,13 @@ class ConvertSubprocessor(Subprocessor):
                 if filename_path.stem not in self.alignments.keys():
                     if not self.debug:
                         self.log_info ( 'no faces found for %s, copying without faces' % (filename_path.name) )
-
-                        if filename_path.suffix == '.png':
+                        add_alpha = self.converter.alpha if hasattr(self.converter, 'alpha') else False
+                        if filename_path.suffix == '.png' and not add_alpha:
                             shutil.copy ( str(filename_path), str(output_filename_path) )
                         else:
                             image = cv2_imread(str(filename_path))
+                            if add_alpha and image.shape[2] == 3:
+                                image = np.concatenate([image, np.zeros_like(image[:,:,0:1])], axis=-1)
                             cv2_imwrite ( str(output_filename_path), image )
                 else:
                     image = (cv2_imread(str(filename_path)) / 255.0).astype(np.float32)

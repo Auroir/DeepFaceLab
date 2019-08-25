@@ -67,6 +67,7 @@ class ConverterMasked(Converter):
                              2:'rgb-mask',
                              3:'mask-only',
                              4:'predicted-only'}.get (mode, 'rgb-mask')
+            self.alpha = True if self.raw_mode == 'rgb-mask' else False
 
         if self.mode != 'raw':
 
