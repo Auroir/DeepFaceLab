@@ -1,4 +1,4 @@
-﻿import os
+import os
 import sys
 import operator
 import numpy as np
@@ -733,7 +733,13 @@ def sort_final(input_path, include_by_blur=True):
 
     return final_img_list, trash_img_list
 
-def final_process(input_path, img_list, trash_img_list):
+def final_process(input_path, img_list, trash_img_list, name_list=None):
+    if len(name_list) != 0: 
+        assert (len(name_list) == len(img_list)), "Length mismatch between files to rename and names to give it them!"
+        use_names = True
+    else:
+        use_names = False
+    
     if len(trash_img_list) != 0:
         parent_input_path = input_path.parent
         trash_path = parent_input_path / (input_path.stem + '_trash')
@@ -766,13 +772,187 @@ def final_process(input_path, img_list, trash_img_list):
         for i in io.progress_bar_generator( [*range(len(img_list))], "Renaming"):
             src = Path (img_list[i][0])
             src = input_path / ('%.5d_%s' % (i, src.name))
-            dst = input_path / ('%.5d%s' % (i, src.suffix))
+            dst = input_path / ('%.5d%s' % (i, src.suffix)) if not use_names else input_path / name_list[i]
             try:
                 src.rename (dst)
             except:
                 io.log_info ('fail to rename %s' % (src.name) )
 
+def sort_whash(input_path):
+    import bayespy
+    import pywt
+    def whashImageBytes(im_bytes, hash_size = 16, image_scale = None, remove_max_haar_ll = False, mode = 'haar'):
+        """
+        Wavelet Hash computation.
+        based on https://www.kaggle.com/c/avito-duplicate-ads-detection/
+        Refactored for use with OpenCV2 & Image file bytes
+        @im_bytes Byte string for image file
+        @hash_size must be a power of 2 and less than @image_scale.
+        @image_scale must be power of 2 and less than image size. By default is equal to max
+        power of 2 for an input image.
+        @mode (see modes in pywt library):
+        'haar' - Haar wavelets, by default
+        'db4' - Daubechies wavelets
+        @remove_max_haar_ll - remove the lowest low level (LL) frequency using Haar wavelet.
+        """
+        image = cv2.imdecode(np.frombuffer(im_bytes, dtype=np.uint8),cv2.IMREAD_GRAYSCALE)
 
+        if image_scale is not None:
+            assert image_scale & (image_scale - 1) == 0, "image_scale is not power of 2"
+        else:
+            image_natural_scale = 2**int(np.log2(min(image.shape)))
+            image_scale = max(image_natural_scale, hash_size)
+
+        ll_max_level = int(np.log2(image_scale))
+
+        level = int(np.log2(hash_size))
+        assert hash_size & (hash_size-1) == 0, "hash_size is not power of 2"
+        assert level <= ll_max_level, "hash_size in a wrong range"
+        dwt_level = ll_max_level - level
+
+        pixels = image / 255
+
+        # Remove low level frequency LL(max_ll) if @remove_max_haar_ll using haar filter
+        if remove_max_haar_ll:
+            coeffs = pywt.wavedec2(pixels, 'haar', level = ll_max_level)
+            coeffs = list(coeffs)
+            coeffs[0] *= 0
+            pixels = pywt.waverec2(coeffs, 'haar')
+
+        # Use LL(K) as freq, where K is log2(@hash_size)
+        coeffs = pywt.wavedec2(pixels, mode, level = dwt_level)
+        dwt_low = coeffs[0]
+
+        # Substract median and compute hash
+        med = np.median(dwt_low)
+        diff = dwt_low > med
+        return diff
+
+    def runBernoulli(x, max_cats):
+        '''
+        Takes an array of a set of binary values, returns the sets grouped together.
+        x = Numpy array, containing sets of boolean vlaues.
+        max_cats = Max number of categories to use while sorting. All are not used. 
+        '''
+        
+        # N data points to analyse
+        # D binary values per point
+        N, D = x.shape[0], x.shape[1]
+
+        print(f'Clustering {N} points based on {D} boolean variables')
+
+        #D = 10
+        # Max 10 groups
+        K = max_cats
+
+        #from bayespy.nodes import Categorical, Dirichlet
+        R = bayespy.nodes.Dirichlet(K*[1e-5],
+                    name='R')
+        Z = bayespy.nodes.Categorical(R,
+                      plates=(N,1),
+                      name='Z')
+        #from bayespy.nodes import Beta
+        P = bayespy.nodes.Beta([0.5, 0.5],
+                plates=(D,K),
+                name='P')
+        #from bayespy.nodes import Mixture, Bernoulli
+        X = bayespy.nodes.Mixture(Z, bayespy.nodes.Bernoulli, P)
+
+        #from bayespy.inference import VB
+        Q = bayespy.inference.VB(Z, R, X, P)
+
+        P.initialize_from_random()
+
+        X.observe(x)
+
+        Q.update(repeat=100)
+
+        return Z
+
+    dst_face_files = Path_utils.get_image_paths(input_path)
+    
+    hash_size = 16
+    hash_cache = {}
+    io.log_info(f'Hashing {len(dst_face_files)} images...')
+#    rate = len(dst_face_files) // 20
+
+    for idx, fn in io.progress_bar_generator(enumerate(dst_face_files), "Hashing images"):
+      #if idx % rate == 0: print(f'{(idx/len(dst_face_files))*100:.2f}%')
+      #print(f'{dst_face_path}/{fn}')
+        try:
+            if fn.endswith('.png'):
+                dflimg = DFLPNG.load(fn)
+            elif fn.endswith('.jpg'):
+                dflimg = DFLJPG.load(fn)
+            else:
+                dflimg = None
+
+            if dflimg is None:
+                io.log_err("%s is not a dfl image file" % (fn))
+                continue
+        except:
+            io.log_err("%s is not a dfl image file" % (fn))
+            continue
+      
+        imhash = whashImageBytes(dflimg.data, hash_size=hash_size)
+
+        srcRect = dflimg.get_source_rect()
+        diag_size = max(100,np.sqrt((abs(srcRect[-2]-srcRect[0])**2)+(abs(srcRect[-1]-srcRect[1])**2)))
+        scaled_val = ((diag_size-100)/300) # % Between 100 and 400px
+        diag_size_row = np.zeros((hash_size,),'bool')
+        fill_len = int(scaled_val*hash_size)
+        diag_size_row[:fill_len].fill(1)
+
+        h_pos1 = max(0,srcRect[0])
+        scaled_val = (h_pos1)/1920 # % Between 0 and 1920 (1080p)
+        h_pos1_row = np.zeros((hash_size,),'bool')
+        fill_len = int(scaled_val*hash_size)
+        h_pos1_row[:fill_len].fill(1)
+
+        h_pos2 = max(0,srcRect[2])
+        scaled_val = (h_pos2)/1920 
+        h_pos2_row = np.zeros((hash_size,),'bool')
+        fill_len = int(scaled_val*hash_size)
+        h_pos2_row[:fill_len].fill(1)
+
+        v_pos1 = max(0,srcRect[1])
+        scaled_val = (v_pos1)/1080 # % Between 0 and 1080
+        v_pos1_row = np.zeros((hash_size,),'bool')
+        fill_len = int(scaled_val*hash_size)
+        v_pos1_row[:fill_len].fill(1)
+
+        v_pos2 = max(0,srcRect[3])
+        scaled_val = (v_pos1)/1080
+        v_pos2_row = np.zeros((hash_size,),'bool')
+        fill_len = int(scaled_val*hash_size)
+        v_pos2_row[:fill_len].fill(1)
+
+        hash_cache[fn] = np.vstack((diag_size_row,h_pos1_row,v_pos1_row,h_pos2_row,v_pos2_row,imhash))
+    
+    key_list = list(hash_cache.keys())
+    np.random.shuffle(key_list)
+    dataset = np.array([hash_cache[x].flatten() for x in key_list])
+    
+    max_cats = 64
+    Z = runBernoulli(dataset, max_cats)
+
+    res = list(zip(key_list, np.array(Z.get_moments()).reshape(len(dataset), max_cats)))
+    res = sorted(res, key=lambda x: x[0]) #Sort by frame number
+    res = sorted(res, key=lambda x: np.max(x[1])) #... confidence score
+    res = sorted(res, key=lambda x: np.argmax(x[1])) #... group
+
+    img_list = []
+    name_list = []
+    curr_grp = 0
+    count = 0
+
+    for r in io.progress_bar_generator(res, "Grouping"):
+      fn = Path(r[0])
+      grp = np.argmax(r[1])
+      count, curr_grp = (count+1, grp) if grp == curr_grp else (1, grp)
+      img_list += [[fn]]
+      name_list += [f'{grp:03d}_{count:05d}_{fn.name}']
+    return img_list, name_list
 
 def main (input_path, sort_by_method):
     input_path = Path(input_path)
@@ -781,6 +961,7 @@ def main (input_path, sort_by_method):
     io.log_info ("Running sort tool.\r\n")
 
     img_list = []
+    name_list = []
     trash_img_list = []
     if sort_by_method == 'blur':            img_list, trash_img_list = sort_by_blur (input_path)
     elif sort_by_method == 'face':          img_list, trash_img_list = sort_by_face (input_path)
@@ -796,5 +977,6 @@ def main (input_path, sort_by_method):
     elif sort_by_method == 'oneface':       img_list, trash_img_list = sort_by_oneface_in_image (input_path)
     elif sort_by_method == 'final':         img_list, trash_img_list = sort_final (input_path)
     elif sort_by_method == 'final-no-blur': img_list, trash_img_list = sort_final (input_path, include_by_blur=False)
+    elif sort_by_method == 'whash':         img_list, name_list = sort_whash (input_path)
 
-    final_process (input_path, img_list, trash_img_list)
+    final_process (input_path, img_list, trash_img_list, name_list)
